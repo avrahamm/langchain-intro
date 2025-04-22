@@ -1,5 +1,3 @@
-# Install the required packages.
-# pip install langchain-chroma
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 from langchain_chroma import Chroma
@@ -136,7 +134,6 @@ def manage_tool_calls(identified_tools: BaseMessage | AIMessage):
         return "No tools found in the response."
 
     tool_call_result = execute_tool_call(identified_tools.tool_calls[0])
-    # print(identified_tools.tool_calls)
     return tool_call_result
 
 def stage5():
@@ -165,22 +162,12 @@ def stage5():
         planet_general_info_tool,
     ]
     model_with_tools = llm.bind_tools(tools_list)
-
     chain = prompt | model_with_tools | manage_tool_calls  # Create a chain by composing prompt and LLM
-    # user_query = "What is the distance of Mars from the sun?"
-    # user_query = "How long does it take Neptune to revolve around the sun?"
-    # user_query = "What is up with Pluto?"
     user_query = input()
-    # identified_tools = chain.invoke({"question": user_query})
-    # identified_tools = model_with_tools.invoke(user_query)
-
-    # print(f"type(identified_tools)) = {type(identified_tools)}")
-    # tool_call_result = manage_tool_calls(identified_tools)
     chain_result = chain.invoke({"question": user_query})
     print(chain_result)
     print(chain)
 
-    # Now you can use tool_results as needed
 
 if __name__ == "__main__":
     stage5()
