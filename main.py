@@ -7,6 +7,9 @@ from langchain_chroma import Chroma
 from langchain_openai import ChatOpenAI
 
 from langchain_core.tools import tool
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import BaseMessage, AIMessage
+
 from langchain_groq import ChatGroq
 
 import os
@@ -121,14 +124,30 @@ def execute_tool_call(tool_call):
             return planet_distance_sun_tool.invoke(planet_name)
         if tool_name == "PlanetRevolutionPeriod":
             return planet_revolution_period_tool.invoke(planet_name)
-        if tool_name == "PlanetGeneralInfo":
-            return planet_general_info_tool.invoke(planet_name)
+        # if tool_name == "PlanetGeneralInfo":
+        return planet_general_info_tool.invoke(planet_name)
 
     except Exception as e:
             return str(e)
 
 
-def stage4():
+def manage_tool_calls(identified_tools: BaseMessage | AIMessage):
+    if not identified_tools or not hasattr(identified_tools, "tool_calls"):
+        return "No tools found in the response."
+
+    tool_call_result = execute_tool_call(identified_tools.tool_calls[0])
+    # print(identified_tools.tool_calls)
+    return tool_call_result
+
+def stage5():
+
+    prompt = ChatPromptTemplate.from_template("""
+        You are a helpful assistant who answers questions
+        users may have.
+        You are asked: {question}."
+    """
+    )
+
     # Initialize the ChatGroq language model with specified parameters
     llm = ChatGroq(
         # model="llama-3.3-70b-versatile",
@@ -146,18 +165,22 @@ def stage4():
         planet_general_info_tool,
     ]
     model_with_tools = llm.bind_tools(tools_list)
+
+    chain = prompt | model_with_tools | manage_tool_calls  # Create a chain by composing prompt and LLM
     # user_query = "What is the distance of Mars from the sun?"
     # user_query = "How long does it take Neptune to revolve around the sun?"
     # user_query = "What is up with Pluto?"
     user_query = input()
+    # identified_tools = chain.invoke({"question": user_query})
+    # identified_tools = model_with_tools.invoke(user_query)
 
-    identified_tools = model_with_tools.invoke(user_query)
-    if identified_tools and hasattr(identified_tools, "tool_calls"):
-        tool_call_result = execute_tool_call(identified_tools.tool_calls[0])
-        print(tool_call_result)
-    print(identified_tools.tool_calls)
+    # print(f"type(identified_tools)) = {type(identified_tools)}")
+    # tool_call_result = manage_tool_calls(identified_tools)
+    chain_result = chain.invoke({"question": user_query})
+    print(chain_result)
+    print(chain)
 
     # Now you can use tool_results as needed
 
 if __name__ == "__main__":
-    stage4()
+    stage5()
